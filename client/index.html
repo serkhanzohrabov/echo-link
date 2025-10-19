@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo Link</title>
+    <link rel="stylesheet" href="./style/style.css">
+    <script src="./app.js" type="module" defer></script>
+    <link rel="manifest" href="./manifest.json">
+     
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    
+  <div id="root">
+
+        <div id="app">    
+
+            <aside class="left-side-bar">
+
+              <div class="left-side-bar-head" > 
+                <input autocomplete="off" type="search" placeholder="Search" id="search" aria-label="Посик чатов"> 
+                <div class="left-side-bar-nav">
+                    <button class="left-side-bar-nav-btn" id="chat-btn"> <img src="./assets/icons/message-square-dot.svg" alt=""> </button>
+                    <button class="left-side-bar-nav-btn active" id="groups-btn"><img src="./assets/icons/users-round.svg" alt=""></button>
+                    <button class="left-side-bar-nav-btn" id="calls-btn"><img src="./assets/icons/phone.svg" alt=""></button>
+                </div>
+              </div>
+
+                <div class="left-side-bar-chats">
+                    <div class="left-side-bar-chat" id="chat-1">
+                        <img src="./assets/icons/logo3.1.png" width="50px" alt=""> <div class="chat-name">Eyecode team</div>
+                    </div>
+                </div>
+
+                <div class="left-side-bar-account">
+                    <div class="left-side-bar-account-avatar"> <img width="50px" src="./assets/ava.png" alt=""> </div>
+                    <div class="left-side-bar-account-name">Serkhan</div>
+                </div>
+   
+            </aside>
+
+            <aside class="mobile-side-bar">
+              <button id="mobile-menu-btn"> <img src="./assets/command.svg" alt="mobile-switch-btn"> </button>
+            </aside>
+
+            <div class="chat">
+
+              <div class="chat-display">
+
+                <ul id="messages">
+                  
+                    <li>Hello</li>
+                    <li>Hello</li>
+                    <li>Hello</li>
+                    <li>Hello</li>
+                </ul>
+
+              </div>
+
+              <div class="chat-area">
+                
+                <div class="mic-wrapper">
+                     <button id="send-mic"> <img src="./assets/icons/mic.svg" alt=""></button>
+                </div>
+
+                <div class="chat-area-wrapper">
+                    <div id="chat-area-input">
+                        <button><img src="./assets/icons/smile.svg" alt=""></button>
+
+                        <form id="form" action="" >
+                          <input autocomplete="off" id="msg-input" type="text" placeholder="Type a message">
+                        </form>
+                          
+                          <button>
+                              <img src="./assets/icons/paperclip.svg" alt="">
+                              <input type="file" id="file" hidden>
+                          </button>
+                    
+
+                    </div>
+                    
+                 <button id="audio-msg">
+                       <img src="./assets/icons/mic.svg" alt="">
+                 </button>
+                     
+                </div>
+                  
+              </div>
+
+            </div>
+            
+            <aside class="right-side-bar"></aside>
+
+        </div>
+  
+
+  </div>
+ 
+<script>
+  const socket = io();
+  const username = prompt('Enter your name');
+  let mediaRecorder;
+  let audiChunks = [];
+
+  const form = document.getElementById('form');
+  const input = document.getElementById('msg-input');
+  const messages = document.getElementById('messages');
+  const sendMic = document.getElementById('send-mic');
+  const audioMsg = document.getElementById('audio-msg');
+  const micWrapper = document.querySelector('.mic-wrapper');
+
+  socket.emit("set username", username);
+  
+  
+  //События Сокета
+
+    socket.on('chat message', (msg) => {
+  
+      const item = document.createElement('li');
+      item.textContent = `${msg.user}: ${msg.message}`;
+      messages.appendChild(item);
+    });
+  
+  // События DOM
+    
+     
+  
+    audioMsg.addEventListener('click', async () => {
+        console.log(navigator)
+      try{
+          micWrapper.classList.toggle('active');
+          const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+          mediaRecorder = new MediaRecorder(stream);
+  
+ 
+
+          mediaRecorder.ondataavailable = (e) => {
+            audiChunks.push(e.data);
+          }
+
+          mediaRecorder.onstop = () => {
+             const audioBlob = new Blob(audiChunks, {type: 'audio/webm'});
+             audiChunks = [];
+             socket.emit('voice message',audioBlob );
+             console.log(audioBlob);
+             const audioURL = URL.createObjectURL(audioBlob);
+             const audio = document.createElement('audio');
+             audio.src = audioURL;
+             audio.controls = true;
+             messages.appendChild(audio);
+          };
+
+          mediaRecorder.start();
+
+      }catch(err){
+        console.log(err);
+      }
+    });
+    
+     sendMic.addEventListener('click', () => {
+        micWrapper.classList.toggle('active'); // toggle
+        mediaRecorder.stop();
+     });
+
+      form.addEventListener('submit', (e) => {
+          e.preventDefault();
+        console.log(input.value);
+          if (input.value) {
+            socket.emit('chat message', input.value);
+            input.value = '';
+          }
+      });
+   
+</script>
+
+
+
+  
+
+</body>
+</html>

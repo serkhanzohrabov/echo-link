@@ -37,6 +37,6 @@ io.on('connection',(socket) => {
 
 
 
-server.listen(port,"192.168.1.136",()=>{
+server.listen(port,()=>{
   console.log(`Сервер запущен на порту ${port}`)
 });
